@@ -1,33 +1,7 @@
 # http://learnandshare645.blogspot.in/2016/06/3d-cnn-in-keras-action-recognition.html
-
-from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential, load_model, Model
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Conv2D, Conv3D
-from keras.layers import Input, BatchNormalization
-from keras.callbacks import ModelCheckpoint
-
-import keras
-
-from numpy.testing import assert_allclose
-
-from keras.optimizers import SGD, RMSprop
-from keras.utils import np_utils, generic_utils
-from keras.layers.convolutional import Convolution3D
-
-import matplotlib
-import matplotlib.pyplot as plt
-
-from sklearn.cross_validation import train_test_split
-from sklearn import cross_validation
-from sklearn import preprocessing
-
 import os
 import cv2
 import numpy as np
-import random
-
-from keras import backend as K
 
 from imgaug import augmenters as iaa
 import imgaug as ia
