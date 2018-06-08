@@ -31,7 +31,7 @@ def customLoss(yTrue, yPred):
     return val
 
 def returnlist(N):
-    l=os.listdir("blurred_sharp/blurred/")
+    l=os.listdir("../Spatemp/blurred_sharp/blurred/")
     b=[int(x.split('.')[0]) for x in l]
     b.sort(key=int)
     l=[str(x)+".png" for x in b]
@@ -39,21 +39,21 @@ def returnlist(N):
 
 def createdata():
     aug = iaa.CropAndPad(px=((-300,0), (-300,0), (-300, 0), (-300, 0)), pad_mode=ia.ALL, pad_cval=(0,128), keep_size=False)
-    l=returnlist(1151)
+    l=returnlist(10)
     x_tr=[]
     y_tr=[]
     for i in range(len(l)-5):
         frames=[]
         for item in l[i:i+5]:
-            imgYCC = rgb2ycbcr(misc.imread("blurred_sharp/blurred/"+item)) #cv2.cvtColor(cv2.imread("blurred_sharp/blurred/"+item), cv2.COLOR_BGR2YCR_CB)
+            imgYCC = rgb2ycbcr(misc.imread("../Spatemp/blurred_sharp/blurred/"+item)) #cv2.cvtColor(cv2.imread("blurred_sharp/blurred/"+item), cv2.COLOR_BGR2YCR_CB)
             frames.append(imgYCC[:,:,0])        #append the Y component
-        outY = rgb2ycbcr(misc.imread("blurred_sharp/sharp/"+l[i+2])) #cv2.cvtColor(cv2.imread("blurred_sharp/sharp/"+l[i+2]), cv2.COLOR_BGR2YCR_CB)[:,:,0]
+        outY = rgb2ycbcr(misc.imread("../Spatemp/blurred_sharp/sharp/"+l[i+2])) #cv2.cvtColor(cv2.imread("blurred_sharp/sharp/"+l[i+2]), cv2.COLOR_BGR2YCR_CB)[:,:,0]
         frames = np.array(frames)
         #print frames.shape
         frames=np.rollaxis(frames,0,3)
         y_tr.append(outY)
         x_tr.append(frames)
-        #print i
+        print i
     print "Created data"
 
     images_augX=x_tr[:]
