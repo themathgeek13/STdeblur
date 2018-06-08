@@ -4,6 +4,8 @@ import torchvision
 import torchvision.transforms as transforms
 import numpy as np
 
+from createdata import *
+
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -54,7 +56,7 @@ class ConvNet(nn.Module):
         #current shape: (N, 16, 3, 128, 128)
         #final shape required: (N, 3, 16, 128, 128)
         N = fmap.shape[0]
-        outmap = torch.ones(()).new_empty((N,3,16,360,360))
+        outmap = torch.ones(()).new_empty((N,3,16,128,128))
         outmap[:,0,:,:,:]=fmap[:,:,0,:,:]
         outmap[:,1,:,:,:]=fmap[:,:,1,:,:]
         outmap[:,2,:,:,:]=fmap[:,:,2,:,:]
@@ -66,7 +68,7 @@ class ConvNet(nn.Module):
         outmap = l2.permute(0,2,1,3,4)
         outmap = self.conv1x1(outmap)
         outmap = outmap.permute(0,2,1,3,4)
-        print outmap.shape
+        #print outmap.shape
         return outmap
         
     def forward(self, x):
@@ -112,25 +114,22 @@ class ConvNet(nn.Module):
         l35 = self.layer35(l34)
         return l35
 
-X_train = np.load("x_train.npy")        #shape (1146,128,128,5)
-print X_train.shape
-y_train = np.load("y_trin.npy")
-X_train=np.rollaxis(X_train,3,1)        #shape (1146,5,128,128)
-X_train = torch.Tensor(np.array(X_train)/255.0)*2-1
-y_train = torch.Tensor(np.array(y_train)/255.0)*2-1
-
 model = ConvNet().to(device)
 #model.load_state_dict(torch.load("model.ckpt"))
 
 # Loss and optimizer
-criterion = nn.MSELoss()
+criterion = nn.L1Loss()
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.95)
 
 # Train the model
 i=0
-total_step = len(X_train)
+total_step = 1146
 for epoch in range(num_epochs):
     i=0
+    X_train, y_train = createdata()
+    X_train=np.rollaxis(X_train,3,1)        #shape (1146,5,128,128)
+    X_train = torch.Tensor(np.array(X_train)/255.0)*2-1
+    y_train = torch.Tensor(np.array(y_train)/255.0)*2-1
     for x,y in zip(X_train, y_train):
         i=i+1
         #x is of shape (5,128,128)
@@ -144,16 +143,16 @@ for epoch in range(num_epochs):
         y=y.to(device)
         # Forward pass
         output = model(x)
-        output = output.view((360*360,1))
-        y = y.view((360*360,1))
+        output = output.view((128*128,1))
+        y = y.view((128*128,1))
         loss = criterion(output, y)
-        print i+1,loss
+        #print i+1,loss
         # Backward and optimize
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
-        if (i+1) % 5 == 0:
+        if (i+1) % 100 == 0:
             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                    .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
             torch.save(model.state_dict(), 'model.ckpt')

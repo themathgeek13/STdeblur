@@ -6,23 +6,25 @@ import numpy as np
 from imgaug import augmenters as iaa
 import imgaug as ia
 
+from scipy import misc
+
 #image specification
 img_rows,img_cols,img_depth = 128,128,5     #using only Y channel of YCrCb
 
-def show(img):
-    cv2.imshow("image",img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+def rgb2ycbcr(im):
+    xform = np.array([[.299, .587, .114], [-.1687, -.3313, .5], [.5, -.4187, -.0813]])
+    ycbcr = im.dot(xform.T)
+    ycbcr[:,:,[1,2]] += 128
+    return np.uint8(ycbcr)
 
-def returnpred(i):
-    out=X_train[i]
-    out=np.expand_dims(out,axis=0)
-    out=np.expand_dims(out,axis=0)
-    ypred=model.predict(out)
-    ypred=ypred.reshape((128,128,3))
-    show(ypred)
-    show(y_train[i].reshape((128,128,3)))
-
+def ycbcr2rgb(im):
+    xform = np.array([[1, 0, 1.402], [1, -0.34414, -.71414], [1, 1.772, 0]])
+    rgb = im.astype(np.float)
+    rgb[:,:,[1,2]] -= 128
+    rgb = rgb.dot(xform.T)
+    np.putmask(rgb, rgb > 255, 255)
+    np.putmask(rgb, rgb < 0, 0)
+    return np.uint8(rgb)
 
 def customLoss(yTrue, yPred):
     val = K.sum(K.sum(K.sum(K.sum(K.sum(K.square(yTrue-yPred))))))
@@ -43,9 +45,9 @@ def createdata():
     for i in range(len(l)-5):
         frames=[]
         for item in l[i:i+5]:
-            imgYCC = cv2.cvtColor(cv2.imread("blurred_sharp/blurred/"+item), cv2.COLOR_BGR2YCR_CB)
+            imgYCC = rgb2ycbcr(misc.imread("blurred_sharp/blurred/"+item)) #cv2.cvtColor(cv2.imread("blurred_sharp/blurred/"+item), cv2.COLOR_BGR2YCR_CB)
             frames.append(imgYCC[:,:,0])        #append the Y component
-        outY = cv2.cvtColor(cv2.imread("blurred_sharp/sharp/"+l[i+2]), cv2.COLOR_BGR2YCR_CB)[:,:,0]
+        outY = rgb2ycbcr(misc.imread("blurred_sharp/sharp/"+l[i+2])) #cv2.cvtColor(cv2.imread("blurred_sharp/sharp/"+l[i+2]), cv2.COLOR_BGR2YCR_CB)[:,:,0]
         frames = np.array(frames)
         #print frames.shape
         frames=np.rollaxis(frames,0,3)
