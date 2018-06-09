@@ -1,1 +1,3 @@
 *.pyc
+*.ckpt
+*.npy

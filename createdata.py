@@ -39,7 +39,7 @@ def returnlist(N):
 
 def createdata():
     aug = iaa.CropAndPad(px=((-300,0), (-300,0), (-300, 0), (-300, 0)), pad_mode=ia.ALL, pad_cval=(0,128), keep_size=False)
-    l=returnlist(10)
+    l=returnlist(1151)
     x_tr=[]
     y_tr=[]
     for i in range(len(l)-5):
