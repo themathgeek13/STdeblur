@@ -1,3 +1,7 @@
 *.pyc
 *.ckpt
 *.npy
+*.png
+*.pth
+*.html
+__pycache__

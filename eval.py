@@ -126,18 +126,22 @@ X_train=np.load("X_train.npy")
 y_train=np.load("y_train.npy")
 
 def compare(val):
-    x=X_train[val]; print x.shape
+    x=X_train[val]
     x=np.array((x[:3,:,:],x[1:4,:,:],x[2:,:,:]))
     x=torch.Tensor(x)
     x=x.unsqueeze(0)
     output=model(x); print "evaluated!"
     img=output.view((128,128))
     img2=((img.data.numpy()+1)/2.0)
-    show(np.hstack([(y_train[val]+1)/2.0, (X_train[val,2,:,:]+1)/2.0, img2]))
     imgclear = (y_train[val]+1)/2.0
     imgblur = (X_train[val,2,:,:]+1)/2.0; np.clip(img2, 0, 1, out=img2)
-    print "original PSNR: ", compare_psnr(imgblur,imgclear)
-    print "output PSNR: ", compare_psnr(img2, imgclear)
+    origPSNR = compare_psnr(imgblur,imgclear)
+    outPSNR = compare_psnr(img2, imgclear)
+    print "original PSNR: ", origPSNR
+    print "output PSNR: ", outPSNR
+    if (outPSNR-origPSNR)>0.4:
+        show(np.hstack([imgclear,imgblur,img2]))
 
 for i in range(1140):
     compare(i)
+    print i
