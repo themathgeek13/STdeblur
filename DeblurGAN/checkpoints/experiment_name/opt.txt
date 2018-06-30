@@ -2,7 +2,7 @@
 aspect_ratio: 1.0
 batchSize: 1
 checkpoints_dir: ./checkpoints
-dataroot: /home/rohan/Dynamove/Spatemp/blurred_sharp/blurred/
+dataroot: /home/rohan/Dynamove/blurtest
 dataset_mode: single
 display_id: 1
 display_port: 8097

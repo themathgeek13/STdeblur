@@ -3,6 +3,12 @@ import os
 import numpy as np
 import cv2
 import argparse
+import re
+
+def sorted_nicely( l ):
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key = alphanum_key)
 
 parser = argparse.ArgumentParser('create image pairs')
 parser.add_argument('--fold_A', dest='fold_A', help='input directory for image A', type=str, default='../dataset/50kshoes_edges')
@@ -20,7 +26,8 @@ splits = os.listdir(args.fold_A)
 for sp in splits:
     img_fold_A = os.path.join(args.fold_A, sp)
     img_fold_B = os.path.join(args.fold_B, sp)
-    img_list = os.listdir(img_fold_A)
+    img_list = sorted_nicely(os.listdir(img_fold_A))
+    print(img_list)
     if args.use_AB: 
         img_list = [img_path for img_path in img_list if '_A.' in img_path]
 
