@@ -294,11 +294,11 @@ class NLayerDiscriminator(nn.Module):
 		super(NLayerDiscriminator, self).__init__()
 		self.gpu_ids = gpu_ids
 		self.use_parallel = use_parallel
+		norm_layer = nn.InstanceNorm3d
 		if type(norm_layer) == functools.partial:
 			use_bias = norm_layer.func == nn.InstanceNorm3d
 		else:
 			use_bias = norm_layer == nn.InstanceNorm3d
-
 		kw = 4
 		padw = int(np.ceil((kw-1)/2))
 		sequence = [
