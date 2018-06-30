@@ -37,7 +37,7 @@ for sp in splits:
     if not os.path.isdir(img_fold_AB):
         os.makedirs(img_fold_AB)
     print('split = %s, number of images = %d' % (sp, num_imgs))
-    for n in range(num_imgs):
+    for n in range(2, num_imgs-3):
         name_A = img_list[n]
         path_A = os.path.join(img_fold_A, name_A)
         if args.use_AB:
@@ -46,11 +46,21 @@ for sp in splits:
             name_B = name_A
         path_B = os.path.join(img_fold_B, name_B)
         if os.path.isfile(path_A) and os.path.isfile(path_B):
-            name_AB = name_A
+            name_AB = img_list[n]
             if args.use_AB:
                 name_AB = name_AB.replace('_A.', '.') # remove _A
             path_AB = os.path.join(img_fold_AB, name_AB)
-            im_A = cv2.imread(path_A, cv2.IMREAD_COLOR)
-            im_B = cv2.imread(path_B, cv2.IMREAD_COLOR)
-            im_AB = np.concatenate([im_A, im_B], 1)
-            cv2.imwrite(path_AB, im_AB)
+            path_AB = path_AB[:-4]+".npy"
+            print path_AB
+            im_A1 = cv2.imread(path_A, 0)
+            im_A_1 = cv2.imread(os.path.join(img_fold_A, img_list[n-1]),0);
+            im_A_2 = cv2.imread(os.path.join(img_fold_A, img_list[n-2]),0);
+            im_A2 = cv2.imread(os.path.join(img_fold_A, img_list[n+1]),0);
+            im_A3 = cv2.imread(os.path.join(img_fold_A, img_list[n+2]),0);
+            im_B = cv2.imread(path_B, 0)
+            im_Apack = np.dstack([im_A_2, im_A_1, im_A1, im_A2, im_A3]);
+            im_Bpack = np.dstack([im_B, im_B, im_B, im_B, im_B])
+            print im_Apack.shape, im_Bpack.shape
+            im_AB = np.concatenate([im_Apack, im_Bpack])
+            #cv2.imwrite(path_AB, im_AB)
+            np.save(path_AB, im_AB)

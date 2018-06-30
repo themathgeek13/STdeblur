@@ -5,7 +5,7 @@ import torch
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 from PIL import Image
-
+import numpy as np
 
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
@@ -25,26 +25,29 @@ class AlignedDataset(BaseDataset):
 
     def __getitem__(self, index):
         AB_path = self.AB_paths[index]
-        AB = Image.open(AB_path).convert('RGB')
-        AB = AB.resize((self.opt.loadSizeX * 2, self.opt.loadSizeY), Image.BICUBIC)
+        print AB_path
+        AB = np.load(AB_path)#Image.open(AB_path).convert('RGB')
+        
+        #print AB.shape
+        AB = np.resize(AB, (self.opt.loadSizeX * 2, self.opt.loadSizeY, 5)) #AB.resize((self.opt.loadSizeX * 2, self.opt.loadSizeY), Image.BICUBIC)
         AB = self.transform(AB)
-
+        # AB = AB.permute(1,2,0)
         w_total = AB.size(2)
         w = int(w_total / 2)
         h = AB.size(1)
         w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
         h_offset = random.randint(0, max(0, h - self.opt.fineSize - 1))
 
-        A = AB[:, h_offset:h_offset + self.opt.fineSize,
+        A = AB[:,h_offset:h_offset + self.opt.fineSize,
                w_offset:w_offset + self.opt.fineSize]
-        B = AB[:, h_offset:h_offset + self.opt.fineSize,
+        B = AB[0,h_offset:h_offset + self.opt.fineSize,
                w + w_offset:w + w_offset + self.opt.fineSize]
-
-        if (not self.opt.no_flip) and random.random() < 0.5:
-            idx = [i for i in range(A.size(2) - 1, -1, -1)]
-            idx = torch.LongTensor(idx)
-            A = A.index_select(2, idx)
-            B = B.index_select(2, idx)
+        print A.shape, B.shape
+        # if (not self.opt.no_flip) and random.random() < 0.5:
+        #     idx = [i for i in range(A.size(2) - 1, -1, -1)]
+        #     idx = torch.LongTensor(idx)
+        #     A = A.index_select(2, idx)
+        #     B = B.index_select(2, idx)
 
         return {'A': A, 'B': B,
                 'A_paths': AB_path, 'B_paths': AB_path}

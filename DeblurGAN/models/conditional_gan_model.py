@@ -73,6 +73,8 @@ class ConditionalGAN(BaseModel):
 
 	def forward(self):
 		self.real_A = Variable(self.input_A)
+		self.real_A.unsqueeze_(0)
+		print self.real_A.shape
 		self.fake_B = self.netG.forward(self.real_A)
 		self.real_B = Variable(self.input_B)
 

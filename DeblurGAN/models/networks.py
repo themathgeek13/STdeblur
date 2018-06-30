@@ -93,7 +93,7 @@ def print_network(net):
 # Code and idea originally from Justin Johnson's architecture.
 # https://github.com/jcjohnson/fast-neural-style/
 class ResnetGenerator(nn.Module):
-	def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6, gpu_ids=[], use_parallel = True, learn_residual = False, padding_type='reflect'):
+	def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm3d, use_dropout=False, n_blocks=6, gpu_ids=[], use_parallel = True, learn_residual = False, padding_type='replicate'):
 		assert(n_blocks >= 0)
 		super(ResnetGenerator, self).__init__()
 		self.input_nc = input_nc
@@ -102,22 +102,24 @@ class ResnetGenerator(nn.Module):
 		self.gpu_ids = gpu_ids
 		self.use_parallel = use_parallel
 		self.learn_residual = learn_residual
-		if type(norm_layer) == functools.partial:
-			use_bias = norm_layer.func == nn.InstanceNorm2d
-		else:
-			use_bias = norm_layer == nn.InstanceNorm2d
 
-		model = [nn.ReflectionPad2d(3),
-				 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0,
-						   bias=use_bias),
-				 norm_layer(ngf),
+		norm_layer = nn.BatchNorm3d
+		# if type(norm_layer) == functools.partial:
+		# 	use_bias = norm_layer.func == nn.InstanceNorm3d
+		# else:
+		# 	use_bias = norm_layer == nn.InstanceNorm3d
+		use_bias = False
+		model = [nn.ReplicationPad3d((1,1,1,1,0,0)),
+				  nn.Conv3d(input_nc, ngf, kernel_size=(1,3,3), padding=0,
+				 	   bias=use_bias),
+				 nn.InstanceNorm3d(ngf),#norm_layer(ngf),
 				 nn.ReLU(True)]
 
 		n_downsampling = 2
 		for i in range(n_downsampling):
 			mult = 2**i
-			model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3,
-								stride=2, padding=1, bias=use_bias),
+			model += [nn.Conv3d(ngf * mult, ngf * mult * 2, kernel_size=(1,3,3),
+								stride=(1,2,2), padding=(0,1,1), bias=use_bias),
 					  norm_layer(ngf * mult * 2),
 					  nn.ReLU(True)]
 
@@ -127,14 +129,14 @@ class ResnetGenerator(nn.Module):
 
 		for i in range(n_downsampling):
 			mult = 2**(n_downsampling - i)
-			model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-										 kernel_size=3, stride=2,
-										 padding=1, output_padding=1,
+			model += [nn.ConvTranspose3d(ngf * mult, int(ngf * mult / 2),
+										 kernel_size=(1,3,3), stride=(1,2,2),
+										 padding=(0,1,1), output_padding=(0,1,1),
 										 bias=use_bias),
 					  norm_layer(int(ngf * mult / 2)),
 					  nn.ReLU(True)]
-		model += [nn.ReflectionPad2d(3)]
-		model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
+		model += [nn.ReplicationPad3d((3,3,3,3,0,0))]
+		model += [nn.Conv3d(ngf, output_nc, kernel_size=(1,7,7), padding=0)]
 		model += [nn.Tanh()]
 
 		self.model = nn.Sequential(*model)
@@ -145,6 +147,7 @@ class ResnetGenerator(nn.Module):
 		else:
 			output = self.model(input)
 		if self.learn_residual:
+			print input.shape, output.shape
 			output = input + output
 			output = torch.clamp(output,min = -1,max = 1)
 		return output
@@ -160,15 +163,15 @@ class ResnetBlock(nn.Module):
 		conv_block = []
 		p = 0
 		if padding_type == 'reflect':
-			conv_block += [nn.ReflectionPad2d(1)]
+			conv_block += [nn.ReflectionPad3d(1)]
 		elif padding_type == 'replicate':
-			conv_block += [nn.ReplicationPad2d(1)]
+			conv_block += [nn.ReplicationPad3d((1,1,1,1,0,0))]
 		elif padding_type == 'zero':
 			p = 1
 		else:
 			raise NotImplementedError('padding [%s] is not implemented' % padding_type)
 
-		conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),
+		conv_block += [nn.Conv3d(dim, dim, kernel_size=(1,3,3), padding=(0,p,p), bias=use_bias),
 					   norm_layer(dim),
 					   nn.ReLU(True)]
 		if use_dropout:
@@ -178,12 +181,12 @@ class ResnetBlock(nn.Module):
 		if padding_type == 'reflect':
 			conv_block += [nn.ReflectionPad2d(1)]
 		elif padding_type == 'replicate':
-			conv_block += [nn.ReplicationPad2d(1)]
+			conv_block += [nn.ReplicationPad3d((1,1,1,1,0,0))]
 		elif padding_type == 'zero':
 			p = 1
 		else:
 			raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-		conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),
+		conv_block += [nn.Conv3d(dim, dim, kernel_size=(1,3,3), padding=(0,p,p), bias=use_bias),
 					   norm_layer(dim)]
 
 		return nn.Sequential(*conv_block)
