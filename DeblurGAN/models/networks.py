@@ -290,19 +290,19 @@ class UnetSkipConnectionBlock(nn.Module):
 
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator(nn.Module):
-	def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.InstanceNorm3d, use_sigmoid=False, gpu_ids=[], use_parallel = True):
+	def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.InstanceNorm2d, use_sigmoid=False, gpu_ids=[], use_parallel = True):
 		super(NLayerDiscriminator, self).__init__()
 		self.gpu_ids = gpu_ids
 		self.use_parallel = use_parallel
-		norm_layer = nn.InstanceNorm3d
 		if type(norm_layer) == functools.partial:
-			use_bias = norm_layer.func == nn.InstanceNorm3d
+			use_bias = norm_layer.func == nn.InstanceNorm2d
 		else:
-			use_bias = norm_layer == nn.InstanceNorm3d
+			use_bias = norm_layer == nn.InstanceNorm2d
+
 		kw = 4
 		padw = int(np.ceil((kw-1)/2))
 		sequence = [
-			nn.Conv3d(input_nc, ndf, kernel_size=(1,kw,kw), stride=(1,2,2), padding=(0,padw,padw)),
+			nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
 			nn.LeakyReLU(0.2, True)
 		]
 
@@ -312,8 +312,8 @@ class NLayerDiscriminator(nn.Module):
 			nf_mult_prev = nf_mult
 			nf_mult = min(2**n, 8)
 			sequence += [
-				nn.Conv3d(ndf * nf_mult_prev, ndf * nf_mult,
-						  kernel_size=(1,kw,kw), stride=(1,2,2), padding=(0,padw,padw), bias=use_bias),
+				nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
+						  kernel_size=kw, stride=2, padding=padw, bias=use_bias),
 				norm_layer(ndf * nf_mult),
 				nn.LeakyReLU(0.2, True)
 			]
@@ -321,13 +321,13 @@ class NLayerDiscriminator(nn.Module):
 		nf_mult_prev = nf_mult
 		nf_mult = min(2**n_layers, 8)
 		sequence += [
-			nn.Conv3d(ndf * nf_mult_prev, ndf * nf_mult,
-					  kernel_size=(1,kw,kw), stride=1, padding=(0,padw,padw), bias=use_bias),
+			nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
+					  kernel_size=kw, stride=1, padding=padw, bias=use_bias),
 			norm_layer(ndf * nf_mult),
 			nn.LeakyReLU(0.2, True)
 		]
 
-		sequence += [nn.Conv3d(ndf * nf_mult, 1, kernel_size=(1,kw,kw), stride=1, padding=(0,padw,padw)]
+		sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
 
 		if use_sigmoid:
 			sequence += [nn.Sigmoid()]
