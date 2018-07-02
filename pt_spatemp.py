@@ -123,13 +123,19 @@ model = ConvNet().to(device)
 criterion = nn.L1Loss()
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.95)
 
+X_train, y_train = createdata()
+np.save("X_train.npy", X_train)
+np.save("y_train.npy", y_train)
+
 # Train the model
 i=0
 total_step = 1146
+batch_size = 2
 for epoch in range(num_epochs):
     i=0
     X_train=np.load("X_train.npy")
     y_train = np.load("y_train.npy") #createdata()
+    print "loaded data"
     #np.save("X_train.npy", X_train)
     #np.save("y_train.npy", y_train)
     #exit(0)
@@ -138,9 +144,6 @@ for epoch in range(num_epochs):
     y_train = torch.Tensor(np.array(y_train)/255.0)*2-1
     for x,y in zip(X_train, y_train):
         i=i+1
-        #x is of shape (5,128,128)
-        #input dim is (N, C_in, depth, height, width)
-        #print x.shape
         x=np.array((x[:3,:,:].numpy(),x[1:4,:,:].numpy(),x[2:,:,:].numpy()))
         #print x.shape
         x=torch.Tensor(x)
