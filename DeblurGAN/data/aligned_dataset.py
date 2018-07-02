@@ -40,7 +40,7 @@ class AlignedDataset(BaseDataset):
 
         A = AB[:,h_offset:h_offset + self.opt.fineSize,
                w_offset:w_offset + self.opt.fineSize]
-        B = AB[0,h_offset:h_offset + self.opt.fineSize,
+        B = AB[:,h_offset:h_offset + self.opt.fineSize,
                w + w_offset:w + w_offset + self.opt.fineSize]
         print A.shape, B.shape
         # if (not self.opt.no_flip) and random.random() < 0.5:

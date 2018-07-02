@@ -27,28 +27,28 @@ class ConvNet(nn.Module):
             nn.ReLU())
         
         self.spatempblock = nn.Sequential(
-            nn.Conv3d(64, 64, kernel_size=(1,3,3), stride=1, padding=(0,1,1)),
-            nn.BatchNorm3d(64),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.Conv3d(64, 64, kernel_size=(1,3,3), stride=1, padding=(0,1,1)),
-            nn.BatchNorm3d(64))
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64))
 
         self.layer33 = nn.Sequential(
-            nn.Conv3d(64, 256, kernel_size=(1,3,3), stride=1, padding=(0,1,1)),
+            nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU())
 
         self.layer34 = nn.Sequential(
-            nn.Conv3d(256, 256, kernel_size=(1,3,3), stride=1, padding=(0,1,1)),
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU())
 
-        self.layer35 = nn.Conv3d(256, 1, kernel_size=(1,3,3), stride=1, padding=(0,1,1))
+        self.layer35 = nn.Conv2d(256, 3, kernel_size=3, stride=1, padding=1)
 
         self.bn4block = nn.Sequential(
-            nn.Conv3d(64, 64, kernel_size=(1,3,3), stride=1, padding=(0,1,1)),
-            nn.BatchNorm3d(64),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.Conv3d(64, 64, kernel_size=(1,3,3), stride=1, padding=(0,1,1)),
-            nn.BatchNorm3d(64))
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64))
 
         self.conv1x1 = nn.Conv3d(16,1,kernel_size=1,stride=1,padding=0)
 
@@ -78,7 +78,9 @@ class ConvNet(nn.Module):
         shuffled = self.shuffle(l1)
         l2 = self.layer2(shuffled)      #size=(N,64,16,128,128)
         l2 = self.anygroup(l2)
-        bn4 = self.bn4block(l2)     #size=(N,64,7,128,128)
+        #print l2.shape
+        l2.squeeze_(2)
+        bn4 = self.bn4block(l2) 
         out1 = bn4+l2
         bn6 = self.spatempblock(out1)
         out2 = bn6+out1
@@ -126,7 +128,11 @@ i=0
 total_step = 1146
 for epoch in range(num_epochs):
     i=0
-    X_train, y_train = createdata()
+    X_train=np.load("X_train.npy")
+    y_train = np.load("y_train.npy") #createdata()
+    #np.save("X_train.npy", X_train)
+    #np.save("y_train.npy", y_train)
+    #exit(0)
     X_train=np.rollaxis(X_train,3,1)        #shape (1146,5,128,128)
     X_train = torch.Tensor(np.array(X_train)/255.0)*2-1
     y_train = torch.Tensor(np.array(y_train)/255.0)*2-1
@@ -136,23 +142,26 @@ for epoch in range(num_epochs):
         #input dim is (N, C_in, depth, height, width)
         #print x.shape
         x=np.array((x[:3,:,:].numpy(),x[1:4,:,:].numpy(),x[2:,:,:].numpy()))
+        #print x.shape
         x=torch.Tensor(x)
         x=x.permute(1,0,2,3)
+        #print x.shape
         x=x.unsqueeze(0)
         x=x.to(device)
         y=y.to(device)
         # Forward pass
         output = model(x)
-        output = output.view((128*128,1))
-        y = y.view((128*128,1))
+        output = output.view((3*128*128,1))
+        y = y.view((3*128*128,1))
         loss = criterion(output, y)
+        print i+1,loss
         #print i+1,loss
         # Backward and optimize
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
-        if (i+1) % 100 == 0:
+        if (i+1) % 5 == 0:
             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                    .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
             torch.save(model.state_dict(), 'model.ckpt')
